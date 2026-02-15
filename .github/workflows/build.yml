@@ -1,9 +1,9 @@
-name: Build APK (ULTIMATE FIX)
+name: Build APK (FINAL STABLE)
 
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -17,76 +17,69 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-
     - name: Setup Java 11
       uses: actions/setup-java@v4
       with:
         distribution: temurin
         java-version: '11'
 
-
     - name: Install system packages
       run: |
         sudo apt-get update
-        sudo apt-get install -y unzip zip wget curl git build-essential python3-pip
+        sudo apt-get install -y \
+          python3-pip \
+          build-essential \
+          git \
+          zip \
+          unzip \
+          wget \
+          curl \
+          openjdk-11-jdk
 
+    - name: Install Python dependencies
+      run: |
+        python3 -m pip install --upgrade pip
+        pip install cython==0.29.33
+        pip install buildozer==1.5.0
 
-    - name: Create SDK directory
+    - name: Download Android SDK command line tools
       run: |
         mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+        cd $ANDROID_SDK_ROOT
 
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O sdk.zip
+        unzip -q sdk.zip
 
-    - name: Download Android commandline tools
-      run: |
-        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O tools.zip
-        unzip tools.zip
-        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
-        mv cmdline-tools/* $ANDROID_SDK_ROOT/cmdline-tools/latest/
+        mkdir -p cmdline-tools/latest
+        mv cmdline-tools/* cmdline-tools/latest/ || true
 
-
-    - name: Install SDK components
+    - name: Setup SDK manager and install packages
       run: |
         export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
 
-        yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
+        yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
+
+        sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
           "platform-tools" \
           "platforms;android-31" \
           "build-tools;31.0.0"
 
-
-    - name: Accept licenses
+    - name: Force Buildozer to use our SDK
       run: |
-        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-        yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
-
-
-    - name: FIX sdkmanager path for Buildozer
-      run: |
-        mkdir -p $ANDROID_SDK_ROOT/tools/bin
-        ln -sfn $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager $ANDROID_SDK_ROOT/tools/bin/sdkmanager
-
-
-    - name: Install Buildozer
-      run: |
-        python3 -m pip install --upgrade pip
-        pip install cython==0.29.33 buildozer==1.5.0
-
-
-    - name: Link SDK to Buildozer folder
-      run: |
-        mkdir -p /home/runner/.buildozer/android/platform/
-        ln -sfn $ANDROID_SDK_ROOT /home/runner/.buildozer/android/platform/android-sdk
-
+        mkdir -p /home/runner/.buildozer/android/platform
+        rm -rf /home/runner/.buildozer/android/platform/android-sdk
+        ln -s $ANDROID_SDK_ROOT /home/runner/.buildozer/android/platform/android-sdk
 
     - name: Build APK
       working-directory: android
       run: |
         export ANDROID_HOME=$ANDROID_SDK_ROOT
         export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT
+        export ANDROIDSDK=$ANDROID_SDK_ROOT
         export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
 
+        buildozer android clean
         buildozer android debug --verbose
-
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
