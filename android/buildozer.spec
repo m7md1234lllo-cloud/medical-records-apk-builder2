@@ -23,6 +23,7 @@ android.api = 31
 android.minapi = 21
 android.ndk = 25b
 android.sdk = 31
+android.build_tools = 31.0.0
 
 # Orientation
 orientation = portrait
