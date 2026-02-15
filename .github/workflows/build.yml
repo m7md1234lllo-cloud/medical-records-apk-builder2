@@ -1,4 +1,4 @@
-name: Build APK (ULTIMATE STABLE)
+name: Build APK (DEBUG GRADLE + STABLE)
 
 on:
   push:
@@ -8,11 +8,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-
     env:
       ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
       ANDROID_HOME: ${{ github.workspace }}/android-sdk
       JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
+      GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
 
     steps:
       - name: Checkout repository
@@ -28,7 +28,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            git wget curl unzip zip build-essential python3-pip openjdk-11-jdk libffi-dev libssl-dev
+            git wget curl unzip zip build-essential python3-pip openjdk-11-jdk \
+            libffi-dev libssl-dev autoconf libtool pkg-config cmake
 
       - name: Create SDK folders
         run: |
@@ -38,9 +39,6 @@ jobs:
           mkdir -p $ANDROID_SDK_ROOT/build-tools
           mkdir -p $ANDROID_SDK_ROOT/licenses
           mkdir -p $HOME/.android
-
-      - name: Ensure repositories.cfg (avoid interactive sdkmanager prompt)
-        run: |
           touch $HOME/.android/repositories.cfg
 
       - name: Download Android command line tools
@@ -50,79 +48,113 @@ jobs:
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
           cp -r /tmp/cmdline-tools/cmdline-tools/* $ANDROID_SDK_ROOT/cmdline-tools/latest/
 
-      - name: Add sdkmanager to PATH and show version
+      - name: Add sdkmanager to PATH and install SDK components
         run: |
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
           $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --version || true
-
-      - name: Install stable SDK components (explicit)
-        run: |
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-          # install stable build-tools & platforms
           yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-31" "build-tools;31.0.0" "build-tools;30.0.3" "cmdline-tools;latest" || true
-          echo "installed build-tools:"
-          ls -la $ANDROID_SDK_ROOT/build-tools || true
 
-      - name: Accept SDK licenses and create license files
+      - name: Accept SDK licenses & create license files
         run: |
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
           yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
-          # create license files (common license keys) to avoid preview prompts
           echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_SDK_ROOT/licenses/android-sdk-license || true
           echo "84831b9409646a918e30573bab4c9c91346d8ab4" > $ANDROID_SDK_ROOT/licenses/android-sdk-preview-license || true
-          echo "created license files"
 
-      - name: Create compatibility symlinks for old Buildozer expectations
+      - name: Create compatibility symlinks for older expectations
         run: |
-          # sdkmanager used to live under tools/bin — provide symlink to cmdline-tools version
           mkdir -p $ANDROID_SDK_ROOT/tools/bin
           ln -sfn $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager $ANDROID_SDK_ROOT/tools/bin/sdkmanager || true
           ln -sfn $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/avdmanager $ANDROID_SDK_ROOT/tools/bin/avdmanager || true
-          ls -la $ANDROID_SDK_ROOT/tools || true
 
       - name: Force Buildozer to use our SDK path
         run: |
           mkdir -p /home/runner/.buildozer/android/platform
           rm -rf /home/runner/.buildozer/android/platform/android-sdk || true
           ln -sfn $ANDROID_SDK_ROOT /home/runner/.buildozer/android/platform/android-sdk
-          echo "linked /home/runner/.buildozer/android/platform/android-sdk -> $ANDROID_SDK_ROOT"
           ls -la /home/runner/.buildozer/android/platform || true
 
-      - name: Ensure buildozer.spec uses stable API and build-tools
+      - name: Ensure stable values in android/buildozer.spec
         run: |
-          # If android/buildozer.spec exists, force values to stable ones to avoid RC requests
-          if [ -f android/buildozer.spec ]; then
-            sed -i '/^android.api\\s*=.*/d' android/buildozer.spec || true
-            sed -i '/^android.build_tools\\s*=.*/d' android/buildozer.spec || true
-            sed -i '/^android.ndk\\s*=.*/d' android/buildozer.spec || true
-            echo "android.api = 31" >> android/buildozer.spec
-            echo "android.build_tools = 31.0.0" >> android/buildozer.spec
-            echo "android.ndk = 25b" >> android/buildozer.spec
-            echo "Updated android/buildozer.spec (api/build_tools/ndk)"
-            sed -n '1,200p' android/buildozer.spec || true
-          else
-            echo "android/buildozer.spec not found!"
-            exit 1
-          fi
+          if [ ! -f android/buildozer.spec ]; then echo "Missing android/buildozer.spec" && exit 1; fi
+          sed -i '/^android.api\\s*=.*/d' android/buildozer.spec || true
+          sed -i '/^android.build_tools\\s*=.*/d' android/buildozer.spec || true
+          sed -i '/^android.ndk\\s*=.*/d' android/buildozer.spec || true
+          echo "android.api = 31" >> android/buildozer.spec
+          echo "android.build_tools = 31.0.0" >> android/buildozer.spec
+          echo "android.ndk = 25b" >> android/buildozer.spec
+          echo "----- buildozer.spec (head) -----"
+          sed -n '1,120p' android/buildozer.spec || true
 
       - name: Install Python packages (buildozer, cython, p4a)
         run: |
           python3 -m pip install --upgrade pip setuptools wheel
-          pip install cython==0.29.33 buildozer==1.5.0
-          pip install python-for-android
+          pip install cython==0.29.33 buildozer==1.5.0 python-for-android
 
-      - name: Build - clean then debug
+      - name: Gradle config - increase JVM heap
+        run: |
+          mkdir -p $GRADLE_USER_HOME
+          echo "org.gradle.jvmargs=-Xmx1536m -Dfile.encoding=UTF-8" > $GRADLE_USER_HOME/gradle.properties || true
+          echo "org.gradle.daemon=false" >> $GRADLE_USER_HOME/gradle.properties || true
+          echo "Wrote $GRADLE_USER_HOME/gradle.properties:"
+          cat $GRADLE_USER_HOME/gradle.properties || true
+
+      - name: Debug: print some diagnostics (SDK / buildozer dirs)
+        run: |
+          echo "---- ENV ----"
+          env | sort
+          echo "---- ANDROID_SDK_ROOT contents ----"
+          ls -la $ANDROID_SDK_ROOT || true
+          echo "---- Buildozer platform dir ----"
+          ls -la /home/runner/.buildozer/android/platform || true
+          echo "---- android/.buildozer tree (if exists) ----"
+          ls -la android/.buildozer || true
+
+      - name: Build - clean then debug (verbose, capture gradle logs)
         working-directory: android
         run: |
+          set -x
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
           export ANDROID_HOME=$ANDROID_SDK_ROOT
           export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT
-          echo "SDK root: $ANDROID_SDK_ROOT"
-          # ensure p4a uses stable branch (optional)
+          export GRADLE_USER_HOME=${GRADLE_USER_HOME}
+          # ensure clean state
           buildozer android clean || true
-          buildozer android debug --verbose
+          # run buildozer (p4a will create gradle wrapper inside .buildozer dists)
+          buildozer android debug --verbose || true
+          # gather gradle logs if present (search dists folder)
+          DISTS_DIR=$(find .buildozer -maxdepth 3 -type d -name "dists" -print -quit || true)
+          if [ -n "$DISTS_DIR" ]; then
+            echo "Found dists dir: $DISTS_DIR"
+            find "$DISTS_DIR" -type f -name "gradlew" -print -exec chmod +x {} \; || true
+            # try to find generated gradle log files
+            find "$DISTS_DIR" -type f -name "*gradle*.log" -o -name "build.log" -print || true
+            # Run gradlew assembleDebug with stacktrace in each dist (best effort)
+            for g in $(find "$DISTS_DIR" -maxdepth 4 -type f -name "gradlew" -print); do
+              BASE_DIR=$(dirname "$g")
+              echo "Running gradlew --no-daemon --stacktrace in $BASE_DIR"
+              chmod +x "$g" || true
+              (cd "$BASE_DIR" && ./gradlew --no-daemon --stacktrace clean assembleDebug) || true
+            done
+          fi
+          echo "=== END BUILD STEP ==="
 
-      - name: Upload APK artifact
+      - name: Collect build logs (artifact)
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/build-logs
+          # copy buildozer logs & gradle logs if exist
+          cp -r android/.buildozer android/.buildozer || true
+          cp -r .buildozer $GITHUB_WORKSPACE/build-logs/ || true
+          find . -maxdepth 6 -type f -name "*gradle*.log" -o -name "build.log" -o -name "last_build.log" -print | xargs -I{} bash -c 'mkdir -p $GITHUB_WORKSPACE/build-logs/gradle && cp "{}" $GITHUB_WORKSPACE/build-logs/gradle/ || true'
+        shell: bash
+
+      - name: Upload build logs (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: build-logs
+
+      - name: Upload APK artifact (if present)
         uses: actions/upload-artifact@v4
         with:
           name: medical-records-apk
