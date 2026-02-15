@@ -1,69 +1,90 @@
 name: Build APK (stable)
 
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-22.04
-
     env:
       ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Setup Java (Temurin 11)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
 
-    - name: Setup Java (Temurin 11)
-      uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: '11'
+      - name: Install apt packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip zip wget curl build-essential git python3-pip
 
-    - name: Install apt packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y unzip zip wget curl build-essential git python3-pip
+      - name: Create Android SDK root
+        run: |
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          mkdir -p $ANDROID_SDK_ROOT/licenses
+          mkdir -p $ANDROID_SDK_ROOT/platform-tools
+          mkdir -p $ANDROID_SDK_ROOT/build-tools
 
-    - name: Create Android SDK root
-      run: |
-        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+      - name: Download Android commandline tools
+        run: |
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O /tmp/cmdline-tools.zip
+          unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
+          cp -r /tmp/cmdline-tools/cmdline-tools/* $ANDROID_SDK_ROOT/cmdline-tools/latest/
 
-    - name: Download Android commandline tools
-      run: |
-        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-        unzip -q cmdline-tools.zip
-        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
-        mv cmdline-tools/* $ANDROID_SDK_ROOT/cmdline-tools/latest/
+      - name: Add sdkmanager to PATH and show version
+        run: |
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --version
 
-    - name: Install SDK components
-      run: |
-        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-        yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-31" "build-tools;31.0.0"
+      - name: Install specific SDK components (stable)
+        run: |
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+          # Install a stable build-tools version and platform 31
+          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-31" "build-tools;31.0.0" || true
+          ls -la $ANDROID_SDK_ROOT/build-tools || true
+          ls -la $ANDROID_SDK_ROOT/platforms || true
 
-    - name: Accept licenses
-      run: |
-        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-        yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
+      - name: Accept all SDK licenses
+        run: |
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
 
-    - name: Install Buildozer
-      run: |
-        python3 -m pip install --upgrade pip
-        pip install cython==0.29.33 buildozer==1.5.0
+      - name: Install Python packages (Buildozer + Cython)
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install "cython==0.29.33" "buildozer==1.5.0"
 
-    - name: Build APK
-      working-directory: android
-      run: |
-        export ANDROID_HOME=$ANDROID_SDK_ROOT
-        export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT
-        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
-        buildozer android debug
+      - name: Show diagnostic (short)
+        run: |
+          echo "JAVA_HOME: $JAVA_HOME"
+          echo "ANDROID_SDK_ROOT: $ANDROID_SDK_ROOT"
+          echo "sdkmanager: $(which sdkmanager || echo 'no sdkmanager')"
+          ls -la $ANDROID_SDK_ROOT/build-tools
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: medical-records-apk
-        path: android/bin/*.apk
+      - name: Ensure buildozer.spec uses API 31 / build-tools 31.0.0 (just show)
+        run: |
+          echo "buildozer.spec preview:"
+          sed -n '1,200p' android/buildozer.spec || true
+
+      - name: Build APK with Buildozer
+        working-directory: ./android
+        run: |
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+          export ANDROID_HOME=$ANDROID_SDK_ROOT
+          export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT
+          buildozer android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: medical-records-apk
+          path: android/bin/*.apk
