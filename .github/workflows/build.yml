@@ -1,4 +1,4 @@
-name: Build APK (FINAL FIX)
+name: Build APK (ULTIMATE FIX)
 
 on:
   workflow_dispatch:
@@ -44,7 +44,7 @@ jobs:
         mv cmdline-tools/* $ANDROID_SDK_ROOT/cmdline-tools/latest/
 
 
-    - name: Install Android SDK components
+    - name: Install SDK components
       run: |
         export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
 
@@ -60,19 +60,22 @@ jobs:
         yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
 
 
+    - name: FIX sdkmanager path for Buildozer
+      run: |
+        mkdir -p $ANDROID_SDK_ROOT/tools/bin
+        ln -sfn $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager $ANDROID_SDK_ROOT/tools/bin/sdkmanager
+
+
     - name: Install Buildozer
       run: |
         python3 -m pip install --upgrade pip
         pip install cython==0.29.33 buildozer==1.5.0
 
 
-    - name: FORCE Buildozer to use correct SDK
+    - name: Link SDK to Buildozer folder
       run: |
         mkdir -p /home/runner/.buildozer/android/platform/
         ln -sfn $ANDROID_SDK_ROOT /home/runner/.buildozer/android/platform/android-sdk
-
-        echo "SDK location:"
-        ls -la /home/runner/.buildozer/android/platform/
 
 
     - name: Build APK
