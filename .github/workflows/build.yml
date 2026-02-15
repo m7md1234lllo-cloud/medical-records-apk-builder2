@@ -1,9 +1,9 @@
-name: Build APK (FINAL FIX ABSOLUTE)
+name: Build APK (ULTIMATE STABLE)
 
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -12,63 +12,118 @@ jobs:
     env:
       ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
       ANDROID_HOME: ${{ github.workspace }}/android-sdk
+      JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Setup Java 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
 
-    - name: Setup Java 11
-      uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: 11
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            git wget curl unzip zip build-essential python3-pip openjdk-11-jdk libffi-dev libssl-dev
 
-    - name: Install system packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-        python3-pip \
-        build-essential \
-        git \
-        zip \
-        unzip \
-        wget \
-        curl \
-        openjdk-11-jdk \
-        autoconf \
-        libtool \
-        pkg-config \
-        zlib1g-dev \
-        libncurses5-dev \
-        libncursesw5-dev \
-        libtinfo5 \
-        cmake \
-        libffi-dev \
-        libssl-dev
+      - name: Create SDK folders
+        run: |
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          mkdir -p $ANDROID_SDK_ROOT/platform-tools
+          mkdir -p $ANDROID_SDK_ROOT/platforms
+          mkdir -p $ANDROID_SDK_ROOT/build-tools
+          mkdir -p $ANDROID_SDK_ROOT/licenses
+          mkdir -p $HOME/.android
 
-    - name: Install Python dependencies
-      run: |
-        python3 -m pip install --upgrade pip setuptools wheel
-        pip install cython==0.29.33
-        pip install buildozer==1.5.0
-        pip install python-for-android
+      - name: Ensure repositories.cfg (avoid interactive sdkmanager prompt)
+        run: |
+          touch $HOME/.android/repositories.cfg
 
-    - name: Initialize buildozer
-      run: |
-        buildozer init || true
+      - name: Download Android command line tools
+        run: |
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O /tmp/cmdline-tools.zip
+          unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
+          cp -r /tmp/cmdline-tools/cmdline-tools/* $ANDROID_SDK_ROOT/cmdline-tools/latest/
 
-    - name: Force clean environment
-      run: |
-        rm -rf .buildozer
-        rm -rf android/.buildozer
+      - name: Add sdkmanager to PATH and show version
+        run: |
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --version || true
 
-    - name: Build APK
-      run: |
-        buildozer android debug
+      - name: Install stable SDK components (explicit)
+        run: |
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+          # install stable build-tools & platforms
+          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-31" "build-tools;31.0.0" "build-tools;30.0.3" "cmdline-tools;latest" || true
+          echo "installed build-tools:"
+          ls -la $ANDROID_SDK_ROOT/build-tools || true
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: medical-records-apk
-        path: bin/*.apk
+      - name: Accept SDK licenses and create license files
+        run: |
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
+          # create license files (common license keys) to avoid preview prompts
+          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_SDK_ROOT/licenses/android-sdk-license || true
+          echo "84831b9409646a918e30573bab4c9c91346d8ab4" > $ANDROID_SDK_ROOT/licenses/android-sdk-preview-license || true
+          echo "created license files"
+
+      - name: Create compatibility symlinks for old Buildozer expectations
+        run: |
+          # sdkmanager used to live under tools/bin — provide symlink to cmdline-tools version
+          mkdir -p $ANDROID_SDK_ROOT/tools/bin
+          ln -sfn $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager $ANDROID_SDK_ROOT/tools/bin/sdkmanager || true
+          ln -sfn $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/avdmanager $ANDROID_SDK_ROOT/tools/bin/avdmanager || true
+          ls -la $ANDROID_SDK_ROOT/tools || true
+
+      - name: Force Buildozer to use our SDK path
+        run: |
+          mkdir -p /home/runner/.buildozer/android/platform
+          rm -rf /home/runner/.buildozer/android/platform/android-sdk || true
+          ln -sfn $ANDROID_SDK_ROOT /home/runner/.buildozer/android/platform/android-sdk
+          echo "linked /home/runner/.buildozer/android/platform/android-sdk -> $ANDROID_SDK_ROOT"
+          ls -la /home/runner/.buildozer/android/platform || true
+
+      - name: Ensure buildozer.spec uses stable API and build-tools
+        run: |
+          # If android/buildozer.spec exists, force values to stable ones to avoid RC requests
+          if [ -f android/buildozer.spec ]; then
+            sed -i '/^android.api\\s*=.*/d' android/buildozer.spec || true
+            sed -i '/^android.build_tools\\s*=.*/d' android/buildozer.spec || true
+            sed -i '/^android.ndk\\s*=.*/d' android/buildozer.spec || true
+            echo "android.api = 31" >> android/buildozer.spec
+            echo "android.build_tools = 31.0.0" >> android/buildozer.spec
+            echo "android.ndk = 25b" >> android/buildozer.spec
+            echo "Updated android/buildozer.spec (api/build_tools/ndk)"
+            sed -n '1,200p' android/buildozer.spec || true
+          else
+            echo "android/buildozer.spec not found!"
+            exit 1
+          fi
+
+      - name: Install Python packages (buildozer, cython, p4a)
+        run: |
+          python3 -m pip install --upgrade pip setuptools wheel
+          pip install cython==0.29.33 buildozer==1.5.0
+          pip install python-for-android
+
+      - name: Build - clean then debug
+        working-directory: android
+        run: |
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+          export ANDROID_HOME=$ANDROID_SDK_ROOT
+          export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT
+          echo "SDK root: $ANDROID_SDK_ROOT"
+          # ensure p4a uses stable branch (optional)
+          buildozer android clean || true
+          buildozer android debug --verbose
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: medical-records-apk
+          path: android/bin/*.apk
