@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+
+{% block title %}ملف المريض - {{ patient['name'] }}{% endblock %}
+
+{% block content %}
+<div class="export-container">
+    <div class="export-actions no-print">
+        <button onclick="window.print()" class="btn btn-primary">🖨️ طباعة / PDF</button>
+        <a href="{{ url_for('patient_details', patient_id=patient['id']) }}" class="btn btn-secondary">← رجوع</a>
+    </div>
+    
+    <!-- Clinic Header -->
+    <div class="clinic-header">
+        <div class="clinic-logo">
+            <div class="logo-placeholder">🏥</div>
+        </div>
+        <div class="clinic-info-header">
+            <h1>{{ clinic['clinic_name'] or 'العيادة الطبية' }}</h1>
+            <p class="clinic-subtitle">{{ clinic['header_text'] or 'عيادة طبية متخصصة' }}</p>
+            <div class="clinic-contact">
+                {% if clinic['clinic_phone'] %}
+                <span>📱 {{ clinic['clinic_phone'] }}</span>
+                {% endif %}
+                {% if clinic['clinic_address'] %}
+                <span>📍 {{ clinic['clinic_address'] }}</span>
+                {% endif %}
+                {% if clinic['clinic_email'] %}
+                <span>📧 {{ clinic['clinic_email'] }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="print-date">
+            <p><strong>تاريخ الطباعة:</strong></p>
+            <p id="printDate"></p>
+        </div>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <div class="document-title">
+        <h2>📋 ملف المريض الطبي</h2>
+    </div>
+    
+    <div class="patient-export-info">
+        <h2>المعلومات الشخصية</h2>
+        <table class="info-table">
+            <tr>
+                <td><strong>الاسم:</strong></td>
+                <td>{{ patient['name'] }}</td>
+                <td><strong>العمر:</strong></td>
+                <td>{{ patient['age'] or '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>الجنس:</strong></td>
+                <td>{{ patient['gender'] or '-' }}</td>
+                <td><strong>فصيلة الدم:</strong></td>
+                <td style="color: #dc3545; font-weight: bold;">{{ patient['blood_type'] or '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>رقم الهاتف:</strong></td>
+                <td>{{ patient['phone'] or '-' }}</td>
+                <td><strong>رقم الهوية:</strong></td>
+                <td>{{ patient['national_id'] or '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>العنوان:</strong></td>
+                <td colspan="3">{{ patient['address'] or '-' }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    {% if patient['allergies'] or patient['chronic_diseases'] or patient['current_medications'] %}
+    <div class="patient-export-info medical-alert">
+        <h2>⚠️ معلومات طبية مهمة</h2>
+        <table class="info-table">
+            {% if patient['allergies'] %}
+            <tr>
+                <td><strong>الحساسية:</strong></td>
+                <td colspan="3">{{ patient['allergies'] }}</td>
+            </tr>
+            {% endif %}
+            {% if patient['chronic_diseases'] %}
+            <tr>
+                <td><strong>الأمراض المزمنة:</strong></td>
+                <td colspan="3">{{ patient['chronic_diseases'] }}</td>
+            </tr>
+            {% endif %}
+            {% if patient['current_medications'] %}
+            <tr>
+                <td><strong>الأدوية الحالية:</strong></td>
+                <td colspan="3">{{ patient['current_medications'] }}</td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+    {% endif %}
+    
+    {% if visits %}
+    <div class="visits-export">
+        <h2>🏥 السجل الطبي</h2>
+        
+        {% for visit in visits %}
+        <div class="visit-export">
+            <div class="visit-export-header">
+                <div class="visit-date-info">
+                    <strong>📅 {{ visit['visit_date'][:10] }}</strong>
+                    <span class="visit-time">⏰ {{ visit['visit_date'][11:16] }}</span>
+                </div>
+                <div class="doctor-info-badge">
+                    {% if visit['doctor_name'] %}
+                    <div class="doctor-name">👨‍⚕️ د. {{ visit['doctor_name'] }}</div>
+                    {% if visit['doctor_spec'] %}
+                    <div class="doctor-spec">{{ visit['doctor_spec'] }}</div>
+                    {% endif %}
+                    {% else %}
+                    <div class="no-doctor">لا يوجد طبيب محدد</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <table class="info-table">
+                {% if visit['symptoms'] %}
+                <tr>
+                    <td class="label-col"><strong>🤒 الأعراض:</strong></td>
+                    <td>{{ visit['symptoms'] }}</td>
+                </tr>
+                {% endif %}
+                
+                {% if visit['vital_signs'] %}
+                <tr>
+                    <td class="label-col"><strong>📊 العلامات الحيوية:</strong></td>
+                    <td>{{ visit['vital_signs'] }}</td>
+                </tr>
+                {% endif %}
+                
+                <tr>
+                    <td class="label-col"><strong>🔍 التشخيص:</strong></td>
+                    <td>{{ visit['diagnosis'] or 'لا يوجد' }}</td>
+                </tr>
+                
+                <tr>
+                    <td class="label-col"><strong>💊 العلاج:</strong></td>
+                    <td>{{ visit['treatment'] or 'لا يوجد' }}</td>
+                </tr>
+                
+                {% if visit['prescriptions'] %}
+                <tr>
+                    <td class="label-col"><strong>📋 الوصفة الطبية:</strong></td>
+                    <td class="prescription-cell"><pre>{{ visit['prescriptions'] }}</pre></td>
+                </tr>
+                {% endif %}
+                
+                {% if visit['lab_tests'] %}
+                <tr>
+                    <td class="label-col"><strong>🧪 الفحوصات المطلوبة:</strong></td>
+                    <td>{{ visit['lab_tests'] }}</td>
+                </tr>
+                {% endif %}
+                
+                {% if visit['next_visit_date'] %}
+                <tr>
+                    <td class="label-col"><strong>📅 موعد المراجعة:</strong></td>
+                    <td>{{ visit['next_visit_date'] }}</td>
+                </tr>
+                {% endif %}
+                
+                {% if visit['notes'] %}
+                <tr>
+                    <td class="label-col"><strong>📝 ملاحظات:</strong></td>
+                    <td>{{ visit['notes'] }}</td>
+                </tr>
+                {% endif %}
+            </table>
+            
+            <div class="visit-financial-summary">
+                <div class="financial-item">
+                    <span class="label">💰 التكلفة:</span>
+                    <span class="value">{{ "%.2f"|format(visit['total_cost']) }}</span>
+                </div>
+                <div class="financial-item">
+                    <span class="label">✅ المدفوع:</span>
+                    <span class="value">{{ "%.2f"|format(visit['paid_amount']) }}</span>
+                </div>
+                <div class="financial-item {% if (visit['total_cost'] - visit['paid_amount']) > 0 %}debt{% endif %}">
+                    <span class="label">⏳ المتبقي:</span>
+                    <span class="value">{{ "%.2f"|format(visit['total_cost'] - visit['paid_amount']) }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Footer -->
+    <div class="document-footer">
+        <p>{{ clinic['footer_text'] or 'نتمنى لكم دوام الصحة والعافية' }}</p>
+        <p class="print-info">طُبع من نظام إدارة الملفات الطبية</p>
+    </div>
+</div>
+
+<style>
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    body {
+        background: white !important;
+    }
+    
+    .export-container {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+    
+    .visit-export {
+        page-break-inside: avoid;
+    }
+    
+    .clinic-header {
+        page-break-after: avoid;
+    }
+}
+
+.export-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: white;
+}
+
+.export-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* Clinic Header */
+.clinic-header {
+    display: grid;
+    grid-template-columns: 100px 1fr 200px;
+    gap: 2rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+}
+
+.clinic-logo .logo-placeholder {
+    font-size: 4rem;
+    background: rgba(255,255,255,0.2);
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.clinic-info-header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.clinic-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 1rem;
+}
+
+.clinic-contact {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    font-size: 0.95rem;
+}
+
+.print-date {
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.divider {
+    height: 3px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    margin: 2rem 0;
+}
+
+.document-title {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.document-title h2 {
+    color: #1a1a2e;
+    font-size: 1.8rem;
+}
+
+.patient-export-info {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.patient-export-info h2 {
+    color: #1a1a2e;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.medical-alert {
+    border: 3px solid #dc3545;
+    background: #fff5f5;
+}
+
+.info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+.info-table td {
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+    vertical-align: top;
+}
+
+.info-table .label-col {
+    background: #f8f9fa;
+    width: 200px;
+    font-weight: 600;
+}
+
+.prescription-cell pre {
+    white-space: pre-wrap;
+    font-family: inherit;
+    margin: 0;
+    line-height: 1.8;
+    background: #fff9e6;
+    padding: 1rem;
+    border-radius: 5px;
+}
+
+.visits-export {
+    margin-top: 2rem;
+}
+
+.visits-export h2 {
+    color: #1a1a2e;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #667eea;
+}
+
+.visit-export {
+    margin-bottom: 2.5rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    page-break-inside: avoid;
+}
+
+.visit-export-header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #2d3748 100%);
+    color: white;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.visit-date-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 1.1rem;
+}
+
+.visit-time {
+    opacity: 0.8;
+    font-size: 0.95rem;
+}
+
+.doctor-info-badge {
+    text-align: left;
+}
+
+.doctor-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.doctor-spec {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-top: 0.25rem;
+}
+
+.no-doctor {
+    font-size: 0.95rem;
+    opacity: 0.7;
+}
+
+.visit-financial-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+    border-top: 2px solid #e0e0e0;
+}
+
+.financial-item {
+    text-align: center;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 8px;
+}
+
+.financial-item .label {
+    display: block;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.25rem;
+}
+
+.financial-item .value {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.financial-item.debt .value {
+    color: #dc3545;
+}
+
+.document-footer {
+    margin-top: 3rem;
+    padding: 2rem;
+    text-align: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    color: #666;
+}
+
+.document-footer p {
+    margin: 0.5rem 0;
+}
+
+.print-info {
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+
+.visit-export + .visit-export {
+    margin-top: 1.5rem;
+}
+</style>
+
+<script>
+// Set print date
+document.getElementById('printDate').textContent = new Date().toLocaleDateString('ar-EG', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+});
+</script>
+{% endblock %}

@@ -1,0 +1,171 @@
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/voice.js') }}"></script>
+<script>
+// Multi-doctor management
+let participatingDoctorsCount = 0;
+const doctorsList = {{ doctors|tojson }};
+
+function addParticipatingDoctor() {
+    participatingDoctorsCount++;
+    const container = document.getElementById('participatingDoctorsList');
+    
+    const doctorCard = document.createElement('div');
+    doctorCard.className = 'participating-doctor-card';
+    doctorCard.id = `doctor-card-${participatingDoctorsCount}`;
+    doctorCard.style.cssText = `
+        background: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        border: 2px solid #e0e0e0;
+        position: relative;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    let doctorOptions = '<option value="">-- اختر طبيب --</option>';
+    doctorsList.forEach(doc => {
+        doctorOptions += `<option value="${doc.id}">د. ${doc.name}${doc.specialization ? ' - ' + doc.specialization : ''}</option>`;
+    });
+    
+    doctorCard.innerHTML = `
+        <button type="button" class="btn btn-danger btn-small" 
+                style="position: absolute; top: 10px; left: 10px; padding: 0.5rem 1rem; z-index: 10;"
+                onclick="removeParticipatingDoctor(${participatingDoctorsCount})">
+            ✕
+        </button>
+        
+        <div class="form-row" style="margin-top: 2rem;">
+            <div class="form-group">
+                <label>الطبيب</label>
+                <select class="participating-doctor-select" data-index="${participatingDoctorsCount}" required>
+                    ${doctorOptions}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>الدور / المهمة</label>
+                <div class="input-with-voice">
+                    <input type="text" class="participating-doctor-role" id="role-${participatingDoctorsCount}" data-index="${participatingDoctorsCount}" 
+                           placeholder="مثال: جراح مساعد، طبيب تخدير">
+                    <button type="button" class="voice-btn" data-target="role-${participatingDoctorsCount}">🎤</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>ملاحظات (اختياري)</label>
+            <div class="input-with-voice">
+                <textarea class="participating-doctor-notes" id="notes-${participatingDoctorsCount}" data-index="${participatingDoctorsCount}" 
+                          rows="2"></textarea>
+                <button type="button" class="voice-btn" data-target="notes-${participatingDoctorsCount}">🎤</button>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(doctorCard);
+    
+    if (window.VoiceInput) {
+        window.VoiceInput.attachToButtons();
+    }
+}
+
+function removeParticipatingDoctor(index) {
+    const card = document.getElementById(`doctor-card-${index}`);
+    if (card) {
+        card.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => card.remove(), 300);
+    }
+}
+
+function getParticipatingDoctors() {
+    const participating = [];
+    const cards = document.querySelectorAll('.participating-doctor-card');
+    
+    cards.forEach(card => {
+        const select = card.querySelector('.participating-doctor-select');
+        const role = card.querySelector('.participating-doctor-role');
+        const notes = card.querySelector('.participating-doctor-notes');
+        
+        if (select && select.value) {
+            participating.push({
+                doctor_id: parseInt(select.value),
+                role: role ? role.value : 'طبيب مشارك',
+                notes: notes ? notes.value : ''
+            });
+        }
+    });
+    
+    return participating;
+}
+
+// Form submission
+document.getElementById('newVisitForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        doctor_id: document.getElementById('doctor_id').value || null,
+        participating_doctors: getParticipatingDoctors(),
+        symptoms: document.getElementById('symptoms').value,
+        vital_signs: document.getElementById('vital_signs').value,
+        diagnosis: document.getElementById('diagnosis').value,
+        treatment: document.getElementById('treatment').value,
+        prescriptions: document.getElementById('prescriptions').value,
+        lab_tests: document.getElementById('lab_tests').value,
+        next_visit_date: document.getElementById('next_visit_date').value,
+        notes: document.getElementById('notes').value,
+        total_cost: document.getElementById('total_cost').value,
+        paid_amount: document.getElementById('paid_amount').value,
+        payment_method: document.getElementById('payment_method').value
+    };
+    
+    try {
+        const response = await fetch('/visit/new/{{ patient["id"] }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ تم إضافة الزيارة بنجاح مع جميع الأطباء المشاركين!');
+            window.location.href = '/patient/{{ patient["id"] }}';
+        }
+    } catch (error) {
+        alert('❌ حدث خطأ أثناء إضافة الزيارة');
+        console.error(error);
+    }
+});
+</script>
+
+<style>
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+}
+
+.participating-doctors-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px dashed #2196f3;
+}
+</style>
+{% endblock %}

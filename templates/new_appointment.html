@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}موعد جديد - {{ patient['name'] }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>📅 إضافة موعد جديد - {{ patient['name'] }}</h2>
+    
+    <form id="newAppointmentForm">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="appointment_date">تاريخ الموعد *</label>
+                <input type="date" id="appointment_date" name="appointment_date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="appointment_time">وقت الموعد *</label>
+                <input type="time" id="appointment_time" name="appointment_time" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="reason">سبب الموعد</label>
+            <div class="input-with-voice">
+                <input type="text" id="reason" name="reason" 
+                       placeholder="مثال: فحص دوري، متابعة، استشارة">
+                <button type="button" class="voice-btn" data-target="reason">🎤</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="status">الحالة</label>
+            <select id="status" name="status">
+                <option value="مجدول">مجدول</option>
+                <option value="تم">تم</option>
+                <option value="ملغي">ملغي</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="notes">ملاحظات</label>
+            <div class="input-with-voice">
+                <textarea id="notes" name="notes" rows="3"></textarea>
+                <button type="button" class="voice-btn" data-target="notes">🎤</button>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 حفظ الموعد</button>
+            <a href="{{ url_for('patient_details', patient_id=patient['id']) }}" 
+               class="btn btn-secondary">إلغاء</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/voice.js') }}"></script>
+<script>
+// Set minimum date to today
+document.getElementById('appointment_date').min = new Date().toISOString().split('T')[0];
+
+document.getElementById('newAppointmentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        appointment_date: document.getElementById('appointment_date').value,
+        appointment_time: document.getElementById('appointment_time').value,
+        reason: document.getElementById('reason').value,
+        status: document.getElementById('status').value,
+        notes: document.getElementById('notes').value
+    };
+    
+    try {
+        const response = await fetch('/appointment/new/{{ patient["id"] }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ تم إضافة الموعد بنجاح!');
+            window.location.href = '/patient/{{ patient["id"] }}';
+        }
+    } catch (error) {
+        alert('❌ حدث خطأ أثناء إضافة الموعد');
+        console.error(error);
+    }
+});
+</script>
+{% endblock %}

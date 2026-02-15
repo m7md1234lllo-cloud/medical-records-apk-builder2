@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}إعدادات العيادة{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>⚙️ إعدادات العيادة</h2>
+    <p style="color: #666; margin-bottom: 2rem;">هذه المعلومات ستظهر في التقارير والطباعة</p>
+    
+    <form id="settingsForm">
+        <div class="form-section">
+            <h3>🏥 معلومات العيادة</h3>
+            
+            <div class="form-group">
+                <label for="clinic_name">اسم العيادة *</label>
+                <div class="input-with-voice">
+                    <input type="text" id="clinic_name" name="clinic_name" 
+                           value="{{ settings['clinic_name'] or 'العيادة الطبية' }}" required>
+                    <button type="button" class="voice-btn" data-target="clinic_name">🎤</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="header_text">النص الرئيسي (يظهر في الترويسة)</label>
+                <div class="input-with-voice">
+                    <input type="text" id="header_text" name="header_text" 
+                           value="{{ settings['header_text'] or 'عيادة طبية متخصصة' }}">
+                    <button type="button" class="voice-btn" data-target="header_text">🎤</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="clinic_address">العنوان</label>
+                <div class="input-with-voice">
+                    <textarea id="clinic_address" name="clinic_address" rows="2">{{ settings['clinic_address'] or '' }}</textarea>
+                    <button type="button" class="voice-btn" data-target="clinic_address">🎤</button>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="clinic_phone">رقم الهاتف</label>
+                    <div class="input-with-voice">
+                        <input type="tel" id="clinic_phone" name="clinic_phone" 
+                               value="{{ settings['clinic_phone'] or '' }}">
+                        <button type="button" class="voice-btn" data-target="clinic_phone">🎤</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="clinic_email">البريد الإلكتروني</label>
+                    <input type="email" id="clinic_email" name="clinic_email" 
+                           value="{{ settings['clinic_email'] or '' }}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="footer_text">النص السفلي (يظهر في التذييل)</label>
+                <div class="input-with-voice">
+                    <input type="text" id="footer_text" name="footer_text" 
+                           value="{{ settings['footer_text'] or 'نتمنى لكم دوام الصحة والعافية' }}">
+                    <button type="button" class="voice-btn" data-target="footer_text">🎤</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box" style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%); padding: 1.5rem; border-radius: 10px; margin: 2rem 0; border-right: 5px solid #17a2b8;">
+            <strong style="color: #0c5460; display: block; margin-bottom: 0.5rem;">💡 نصيحة:</strong>
+            <p style="color: #0c5460; margin: 0;">هذه المعلومات ستظهر في جميع التقارير المطبوعة وملفات PDF التي يتم تصديرها. تأكد من دقة البيانات.</p>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 حفظ الإعدادات</button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">إلغاء</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/voice.js') }}"></script>
+<script>
+document.getElementById('settingsForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        clinic_name: document.getElementById('clinic_name').value,
+        header_text: document.getElementById('header_text').value,
+        clinic_address: document.getElementById('clinic_address').value,
+        clinic_phone: document.getElementById('clinic_phone').value,
+        clinic_email: document.getElementById('clinic_email').value,
+        footer_text: document.getElementById('footer_text').value
+    };
+    
+    try {
+        const response = await fetch('/settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ تم حفظ الإعدادات بنجاح!');
+            window.location.reload();
+        }
+    } catch (error) {
+        alert('❌ حدث خطأ أثناء حفظ الإعدادات');
+        console.error(error);
+    }
+});
+</script>
+{% endblock %}

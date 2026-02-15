@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}إضافة طبيب جديد{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>➕ إضافة طبيب جديد</h2>
+    
+    <form id="newDoctorForm">
+        <div class="form-section">
+            <h3>👨‍⚕️ معلومات الطبيب</h3>
+            
+            <div class="form-group">
+                <label for="name">الاسم الكامل *</label>
+                <div class="input-with-voice">
+                    <input type="text" id="name" name="name" required>
+                    <button type="button" class="voice-btn" data-target="name">🎤</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="specialization">التخصص</label>
+                <div class="input-with-voice">
+                    <input type="text" id="specialization" name="specialization" 
+                           placeholder="مثال: طب عام، أطفال، عظام، قلب">
+                    <button type="button" class="voice-btn" data-target="specialization">🎤</button>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="phone">رقم الهاتف</label>
+                    <div class="input-with-voice">
+                        <input type="tel" id="phone" name="phone">
+                        <button type="button" class="voice-btn" data-target="phone">🎤</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">البريد الإلكتروني</label>
+                    <input type="email" id="email" name="email">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="license_number">رقم الترخيص/الرخصة</label>
+                <div class="input-with-voice">
+                    <input type="text" id="license_number" name="license_number">
+                    <button type="button" class="voice-btn" data-target="license_number">🎤</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 حفظ الطبيب</button>
+            <a href="{{ url_for('doctors_list') }}" class="btn btn-secondary">إلغاء</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/voice.js') }}"></script>
+<script>
+document.getElementById('newDoctorForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        name: document.getElementById('name').value,
+        specialization: document.getElementById('specialization').value,
+        phone: document.getElementById('phone').value,
+        email: document.getElementById('email').value,
+        license_number: document.getElementById('license_number').value
+    };
+    
+    try {
+        const response = await fetch('/doctor/new', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ تم إضافة الطبيب بنجاح!');
+            window.location.href = '/doctors';
+        }
+    } catch (error) {
+        alert('❌ حدث خطأ أثناء إضافة الطبيب');
+        console.error(error);
+    }
+});
+</script>
+{% endblock %}

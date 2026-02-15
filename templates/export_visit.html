@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+
+{% block title %}تقرير طبي - {{ visit['patient_name'] }}{% endblock %}
+
+{% block content %}
+<div class="export-container">
+    <div class="export-actions no-print">
+        <button onclick="window.print()" class="btn btn-primary">🖨️ طباعة / PDF</button>
+        <a href="{{ url_for('patient_details', patient_id=visit['patient_id']) }}" class="btn btn-secondary">← رجوع</a>
+    </div>
+    
+    <!-- Clinic Header -->
+    <div class="clinic-header">
+        <div class="clinic-logo">
+            <div class="logo-placeholder">🏥</div>
+        </div>
+        <div class="clinic-info-header">
+            <h1>{{ clinic['clinic_name'] or 'العيادة الطبية' }}</h1>
+            <p class="clinic-subtitle">{{ clinic['header_text'] or 'عيادة طبية متخصصة' }}</p>
+            <div class="clinic-contact">
+                {% if clinic['clinic_phone'] %}
+                <span>📱 {{ clinic['clinic_phone'] }}</span>
+                {% endif %}
+                {% if clinic['clinic_address'] %}
+                <span>📍 {{ clinic['clinic_address'] }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="print-date">
+            <p><strong>تاريخ الطباعة:</strong></p>
+            <p id="printDate"></p>
+        </div>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <div class="document-title">
+        <h2>📋 تقرير طبي</h2>
+    </div>
+    
+    <!-- Patient Info -->
+    <div class="patient-export-info">
+        <h3>معلومات المريض</h3>
+        <table class="info-table">
+            <tr>
+                <td class="label-col"><strong>الاسم:</strong></td>
+                <td>{{ visit['patient_name'] }}</td>
+                <td class="label-col"><strong>العمر:</strong></td>
+                <td>{{ visit['patient_age'] or 'لا يوجد' }}</td>
+            </tr>
+            <tr>
+                <td class="label-col"><strong>الجنس:</strong></td>
+                <td>{{ visit['patient_gender'] or 'لا يوجد' }}</td>
+                <td class="label-col"><strong>فصيلة الدم:</strong></td>
+                <td style="color: #dc3545; font-weight: bold;">{{ visit['blood_type'] or 'لا يوجد' }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <!-- Visit Details -->
+    <div class="visit-report-details">
+        <div class="visit-header-section">
+            <div class="visit-date-box">
+                <div class="box-label">تاريخ الزيارة</div>
+                <div class="box-value">{{ visit['visit_date'][:10] }}</div>
+                <div class="box-time">{{ visit['visit_date'][11:16] }}</div>
+            </div>
+            
+            <div class="doctor-box">
+                <div class="box-label">الطبيب المعالج</div>
+                {% if visit['doctor_name'] %}
+                <div class="box-value">د. {{ visit['doctor_name'] }}</div>
+                {% if visit['doctor_spec'] %}
+                <div class="box-spec">{{ visit['doctor_spec'] }}</div>
+                {% endif %}
+                {% else %}
+                <div class="box-value">لا يوجد</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="medical-content">
+            {% if visit['symptoms'] %}
+            <div class="medical-section">
+                <h3>🤒 الأعراض</h3>
+                <p class="medical-text">{{ visit['symptoms'] }}</p>
+            </div>
+            {% endif %}
+            
+            {% if visit['vital_signs'] %}
+            <div class="medical-section">
+                <h3>📊 العلامات الحيوية</h3>
+                <p class="medical-text">{{ visit['vital_signs'] }}</p>
+            </div>
+            {% endif %}
+            
+            <div class="medical-section highlight">
+                <h3>🔍 التشخيص</h3>
+                <p class="medical-text">{{ visit['diagnosis'] or 'لا يوجد' }}</p>
+            </div>
+            
+            <div class="medical-section highlight">
+                <h3>💊 خطة العلاج</h3>
+                <p class="medical-text">{{ visit['treatment'] or 'لا يوجد' }}</p>
+            </div>
+            
+            {% if visit['prescriptions'] %}
+            <div class="medical-section prescription">
+                <h3>📋 الوصفة الطبية</h3>
+                <div class="prescription-content">
+                    <pre>{{ visit['prescriptions'] }}</pre>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if visit['lab_tests'] %}
+            <div class="medical-section">
+                <h3>🧪 الفحوصات المطلوبة</h3>
+                <p class="medical-text">{{ visit['lab_tests'] }}</p>
+            </div>
+            {% endif %}
+            
+            {% if visit['next_visit_date'] %}
+            <div class="medical-section next-visit">
+                <h3>📅 موعد المراجعة القادم</h3>
+                <p class="medical-text large">{{ visit['next_visit_date'] }}</p>
+            </div>
+            {% endif %}
+            
+            {% if visit['notes'] %}
+            <div class="medical-section">
+                <h3>📝 ملاحظات إضافية</h3>
+                <p class="medical-text">{{ visit['notes'] }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Footer with signature -->
+    <div class="report-footer">
+        <div class="signature-section">
+            <div class="signature-box">
+                <p class="signature-label">توقيع الطبيب</p>
+                <div class="signature-line"></div>
+                {% if visit['doctor_name'] %}
+                <p class="doctor-name-sig">د. {{ visit['doctor_name'] }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="document-footer">
+            <p>{{ clinic['footer_text'] or 'نتمنى لكم دوام الصحة والعافية' }}</p>
+            <p class="print-info">هذا التقرير صادر من نظام إدارة الملفات الطبية</p>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .no-print { display: none !important; }
+    body { background: white !important; }
+    .export-container { padding: 0 !important; }
+}
+
+.export-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: white;
+}
+
+.clinic-header {
+    display: grid;
+    grid-template-columns: 100px 1fr 180px;
+    gap: 1.5rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+}
+
+.clinic-logo .logo-placeholder {
+    font-size: 4rem;
+    background: rgba(255,255,255,0.2);
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.clinic-info-header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.clinic-subtitle {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin-bottom: 0.75rem;
+}
+
+.clinic-contact {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+}
+
+.divider {
+    height: 3px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    margin: 2rem 0;
+}
+
+.document-title {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.patient-export-info {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.info-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.info-table td {
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+}
+
+.label-col {
+    background: #fff;
+    width: 150px;
+    font-weight: 600;
+}
+
+.visit-report-details {
+    margin: 2rem 0;
+}
+
+.visit-header-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.visit-date-box, .doctor-box {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 10px;
+    border-right: 5px solid #2196f3;
+}
+
+.box-label {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.box-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.box-time, .box-spec {
+    font-size: 0.95rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.medical-content {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.medical-section {
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-right: 4px solid #667eea;
+}
+
+.medical-section h3 {
+    color: #1a1a2e;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.medical-text {
+    line-height: 1.8;
+    color: #333;
+    font-size: 1.05rem;
+}
+
+.medical-text.large {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.medical-section.highlight {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+    border-right-color: #ffc107;
+}
+
+.medical-section.prescription {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border-right-color: #28a745;
+}
+
+.prescription-content pre {
+    white-space: pre-wrap;
+    font-family: inherit;
+    line-height: 2;
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.medical-section.next-visit {
+    background: linear-gradient(135deg, #cfe2ff 0%, #9ec5fe 100%);
+    border-right-color: #0d6efd;
+}
+
+.report-footer {
+    margin-top: 3rem;
+}
+
+.signature-section {
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.signature-box {
+    max-width: 300px;
+    margin: 0 0 0 auto;
+}
+
+.signature-label {
+    font-size: 0.95rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.signature-line {
+    height: 2px;
+    background: #333;
+    margin: 3rem 0 1rem 0;
+}
+
+.doctor-name-sig {
+    text-align: center;
+    font-weight: 600;
+    color: #1a1a2e;
+}
+
+.document-footer {
+    padding: 2rem;
+    text-align: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    color: #666;
+}
+
+.document-footer p {
+    margin: 0.5rem 0;
+}
+
+.print-info {
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+</style>
+
+<script>
+document.getElementById('printDate').textContent = new Date().toLocaleDateString('ar-EG', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+});
+</script>
+{% endblock %}

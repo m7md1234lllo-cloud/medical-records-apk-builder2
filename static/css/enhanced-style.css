@@ -1,0 +1,631 @@
+/* ===== تحسينات الخطوط والألوان ===== */
+
+/* تكبير الخطوط العامة */
+body {
+    font-size: 18px !important;
+    line-height: 1.8 !important;
+}
+
+h1 { font-size: 2.2rem !important; }
+h2 { font-size: 2rem !important; }
+h3 { font-size: 1.6rem !important; }
+h4 { font-size: 1.4rem !important; }
+h5 { font-size: 1.2rem !important; }
+
+/* Form Groups */
+.form-group label {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    color: #1a1a2e !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 1.2rem 1.5rem !important;
+    font-size: 1.2rem !important;
+    border: 3px solid #e0e0e0 !important;
+    border-radius: 15px !important;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #1a1a2e !important;
+    box-shadow: 0 0 0 4px rgba(26, 26, 46, 0.1) !important;
+}
+
+/* Buttons Enhanced */
+.btn {
+    padding: 1.2rem 2.5rem !important;
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    border-radius: 15px !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 25px rgba(26, 26, 46, 0.3) !important;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #0f9b0f 0%, #00d084 100%) !important;
+}
+
+.btn-success:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 25px rgba(15, 155, 15, 0.3) !important;
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%) !important;
+}
+
+.btn-small {
+    font-size: 1.1rem !important;
+    padding: 0.85rem 1.5rem !important;
+}
+
+/* Voice Button */
+.voice-btn {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+    padding: 1rem 2rem !important;
+    font-size: 1.6rem !important;
+    border-radius: 15px !important;
+    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3) !important;
+}
+
+.voice-btn:hover {
+    transform: scale(1.05) !important;
+}
+
+/* Tables */
+.data-table th,
+.data-table td {
+    padding: 1.5rem !important;
+    font-size: 1.15rem !important;
+}
+
+.data-table th {
+    background: #1a1a2e !important;
+    color: white !important;
+    font-weight: 700 !important;
+}
+
+/* Patient Cards Enhanced */
+.patient-card {
+    border-radius: 20px !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12) !important;
+    border-right: 6px solid #0f9b0f !important;
+}
+
+.patient-card.has-debt {
+    border-right-color: #dc3545 !important;
+}
+
+.patient-card-header {
+    padding: 1.75rem !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+}
+
+.patient-main-info h3 {
+    font-size: 1.5rem !important;
+    color: #1a1a2e !important;
+    font-weight: 700 !important;
+}
+
+.patient-meta {
+    font-size: 1.05rem !important;
+}
+
+.blood-badge {
+    font-size: 1.05rem !important;
+    padding: 0.4rem 0.8rem !important;
+    font-weight: 700 !important;
+}
+
+.debt-badge-large {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 12px !important;
+    min-width: 100px !important;
+}
+
+.debt-value {
+    font-size: 1.5rem !important;
+    font-weight: 800 !important;
+}
+
+.paid-badge {
+    background: linear-gradient(135deg, #0f9b0f 0%, #00d084 100%) !important;
+    padding: 0.75rem 1.25rem !important;
+    border-radius: 12px !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+}
+
+.financial-mini {
+    padding-top: 1.25rem !important;
+    margin-top: 1.25rem !important;
+}
+
+.fin-item .label {
+    font-size: 1rem !important;
+}
+
+.fin-item .value {
+    font-size: 1.35rem !important;
+    font-weight: 800 !important;
+}
+
+/* Dashboard Enhancements */
+.dashboard-hero h2 {
+    font-size: 2.5rem !important;
+    font-weight: 800 !important;
+}
+
+.dashboard-hero p {
+    font-size: 1.4rem !important;
+}
+
+.widget-header h3 {
+    font-size: 1.4rem !important;
+    color: #1a1a2e !important;
+}
+
+.revenue-label {
+    font-size: 1.1rem !important;
+}
+
+.revenue-value {
+    font-size: 2.2rem !important;
+    font-weight: 800 !important;
+}
+
+.stat-value {
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+}
+
+.stat-label {
+    font-size: 1.1rem !important;
+}
+
+/* Action Cards Enhanced */
+.action-card-enhanced {
+    padding: 2.5rem !important;
+    border-radius: 20px !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12) !important;
+}
+
+.action-card-enhanced h4 {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    color: #1a1a2e !important;
+}
+
+.action-card-enhanced p {
+    font-size: 1.15rem !important;
+}
+
+.card-icon {
+    font-size: 3.5rem !important;
+    width: 90px !important;
+    height: 90px !important;
+}
+
+/* Search Enhanced */
+.search-box-enhanced input {
+    font-size: 1.25rem !important;
+    padding: 1.25rem 1.75rem !important;
+    border: 3px solid #e0e0e0 !important;
+}
+
+.search-box-enhanced input:focus {
+    border-color: #1a1a2e !important;
+}
+
+/* Stats Mini */
+.stat-mini {
+    padding: 1.25rem 2rem !important;
+}
+
+.stat-number {
+    font-size: 2.5rem !important;
+    font-weight: 800 !important;
+    color: #1a1a2e !important;
+}
+
+.stat-label {
+    font-size: 1.15rem !important;
+}
+
+/* Visit Cards */
+.visit-card {
+    border-radius: 20px !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1) !important;
+}
+
+.visit-header {
+    padding: 1.5rem 2rem !important;
+}
+
+.visit-date {
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+}
+
+.visit-body {
+    padding: 2rem !important;
+}
+
+.visit-info strong {
+    font-size: 1.2rem !important;
+    color: #1a1a2e !important;
+    font-weight: 700 !important;
+}
+
+.visit-info p {
+    font-size: 1.15rem !important;
+    line-height: 1.8 !important;
+}
+
+/* Badges */
+.badge {
+    font-size: 1.05rem !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 700 !important;
+}
+
+/* Info Box */
+.info-box {
+    padding: 1.5rem !important;
+    font-size: 1.2rem !important;
+    border-radius: 12px !important;
+}
+
+.info-box strong {
+    font-size: 1.3rem !important;
+}
+
+/* Appointments */
+.appointment-card {
+    border-radius: 20px !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1) !important;
+}
+
+.appointment-header {
+    padding: 1.5rem 2rem !important;
+}
+
+.appointment-date strong {
+    font-size: 1.3rem !important;
+}
+
+.time {
+    font-size: 1.1rem !important;
+}
+
+/* Reports */
+.stat-card {
+    padding: 2rem !important;
+    border-radius: 20px !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1) !important;
+}
+
+.stat-icon {
+    font-size: 3rem !important;
+}
+
+.stat-value {
+    font-size: 2.5rem !important;
+    font-weight: 800 !important;
+}
+
+/* Patient Info Cards */
+.patient-info-card {
+    padding: 2rem !important;
+    border-radius: 20px !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1) !important;
+}
+
+.patient-info-card h3 {
+    font-size: 1.6rem !important;
+    font-weight: 700 !important;
+}
+
+.info-item strong {
+    font-size: 1.2rem !important;
+    color: #1a1a2e !important;
+}
+
+.info-item {
+    font-size: 1.15rem !important;
+    padding: 0.75rem 0 !important;
+}
+
+/* Financial Summary */
+.summary-card {
+    padding: 2rem !important;
+    border-radius: 20px !important;
+}
+
+.summary-label {
+    font-size: 1.1rem !important;
+}
+
+.summary-value {
+    font-size: 2.5rem !important;
+    font-weight: 800 !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    body {
+        font-size: 16px !important;
+    }
+    
+    h1 { font-size: 1.8rem !important; }
+    h2 { font-size: 1.6rem !important; }
+    h3 { font-size: 1.4rem !important; }
+    
+    .btn {
+        padding: 1rem 2rem !important;
+        font-size: 1.1rem !important;
+    }
+    
+    .patient-main-info h3 {
+        font-size: 1.3rem !important;
+    }
+}
+
+/* Danger Button */
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+    color: white !important;
+}
+
+.btn-danger:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4) !important;
+}
+
+/* Delete confirmation styling */
+.backup-info-box {
+    animation: slideIn 0.5s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== تحسينات إضافية ===== */
+
+/* Progress Bars for Stats */
+.stat-progress {
+    width: 100%;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.progress-bar {
+    height: 100%;
+    transition: width 1s ease;
+    border-radius: 10px;
+}
+
+/* Summary Card Icons */
+.summary-icon.revenue {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%) !important;
+}
+
+.summary-icon.collected {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+}
+
+.summary-icon.outstanding {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+}
+
+/* Better stat cards */
+.stat-card {
+    transition: all 0.3s !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.stat-card:hover::before {
+    opacity: 1;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px) scale(1.02) !important;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15) !important;
+}
+
+/* Better info boxes */
+.info-box {
+    animation: fadeInUp 0.5s ease !important;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* No data states */
+.no-data {
+    text-align: center;
+    padding: 3rem 2rem !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-radius: 15px !important;
+    color: #666 !important;
+    font-size: 1.2rem !important;
+}
+
+/* Better table styling */
+.data-table tbody tr:hover {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* Settings page enhancements */
+.form-section {
+    animation: slideInRight 0.5s ease;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Success messages */
+.success-message {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    border-right: 5px solid #28a745;
+    margin-bottom: 1.5rem;
+    animation: slideDown 0.5s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Export button improvements */
+.btn-export {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
+    color: white !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-export::after {
+    content: '📄';
+    position: absolute;
+    top: 50%;
+    left: -30px;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    opacity: 0;
+    transition: all 0.3s;
+}
+
+.btn-export:hover::after {
+    left: 10px;
+    opacity: 1;
+}
+
+.btn-export:hover {
+    padding-right: 3rem !important;
+}
+
+/* Loading states */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Improved tooltips */
+[title] {
+    position: relative;
+    cursor: help;
+}
+
+/* Better focus states */
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none !important;
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1) !important;
+    transform: scale(1.01);
+}
+
+/* Smooth page transitions */
+.main-content {
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Better scrollbar */
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #6a4190 100%);
+}

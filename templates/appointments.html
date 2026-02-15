@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}المواعيد{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>📅 المواعيد</h2>
+</div>
+
+<div class="appointments-container">
+    {% if appointments %}
+    <div class="appointments-grid">
+        {% for appointment in appointments %}
+        <div class="appointment-card status-{{ appointment['status']|replace(' ', '-') }}">
+            <div class="appointment-header">
+                <div class="appointment-date">
+                    <span class="date-icon">📅</span>
+                    <div>
+                        <strong>{{ appointment['appointment_date'] }}</strong>
+                        <br>
+                        <span class="time">🕐 {{ appointment['appointment_time'] }}</span>
+                    </div>
+                </div>
+                <span class="status-badge status-{{ appointment['status']|replace(' ', '-') }}">
+                    {{ appointment['status'] }}
+                </span>
+            </div>
+            
+            <div class="appointment-body">
+                <div class="patient-info">
+                    <strong>👤 {{ appointment['patient_name'] }}</strong>
+                    {% if appointment['phone'] %}
+                    <br><small>📱 {{ appointment['phone'] }}</small>
+                    {% endif %}
+                </div>
+                
+                {% if appointment['reason'] %}
+                <div class="appointment-reason">
+                    <strong>السبب:</strong> {{ appointment['reason'] }}
+                </div>
+                {% endif %}
+                
+                {% if appointment['notes'] %}
+                <div class="appointment-notes">
+                    <small>📝 {{ appointment['notes'] }}</small>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="appointment-actions">
+                <a href="{{ url_for('patient_details', patient_id=appointment['patient_id']) }}" 
+                   class="btn btn-small">عرض المريض</a>
+                
+                {% if appointment['status'] == 'مجدول' %}
+                <button class="btn btn-small btn-success" 
+                        onclick="updateStatus({{ appointment['id'] }}, 'تم')">
+                    ✅ تم
+                </button>
+                <button class="btn btn-small" 
+                        onclick="updateStatus({{ appointment['id'] }}, 'ملغي')">
+                    ❌ إلغاء
+                </button>
+                {% endif %}
+                
+                <button class="btn btn-small btn-danger" 
+                        onclick="deleteAppointment({{ appointment['id'] }})">
+                    🗑️ حذف
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-appointments">
+        <p class="no-data">📅 لا توجد مواعيد مسجلة</p>
+        <p>يمكنك إضافة موعد من صفحة المريض</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function updateStatus(appointmentId, status) {
+    if (!confirm('هل تريد تحديث حالة الموعد إلى "' + status + '"؟')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/appointment/update/' + appointmentId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: status })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ تم تحديث حالة الموعد');
+            location.reload();
+        }
+    } catch (error) {
+        alert('❌ حدث خطأ أثناء تحديث الموعد');
+        console.error(error);
+    }
+}
+
+async function deleteAppointment(appointmentId) {
+    if (!confirm('⚠️ هل أنت متأكد من حذف هذا الموعد؟')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/appointment/delete/' + appointmentId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ تم حذف الموعد');
+            location.reload();
+        }
+    } catch (error) {
+        alert('❌ حدث خطأ أثناء حذف الموعد');
+        console.error(error);
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}قائمة المرضى{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>📋 قائمة المرضى</h2>
+    <div class="header-actions">
+        <div class="search-mini">
+            <input type="text" id="quickSearch" placeholder="بحث سريع..." />
+            <button class="voice-btn" data-target="quickSearch">🎤</button>
+        </div>
+        <a href="{{ url_for('new_patient') }}" class="btn btn-primary">➕ مريض جديد</a>
+    </div>
+</div>
+
+<div class="stats-summary">
+    <div class="stat-mini">
+        <span class="stat-number">{{ patients|length }}</span>
+        <span class="stat-label">مريض</span>
+    </div>
+    <div class="stat-mini success">
+        <span class="stat-number">{{ patients|selectattr('total_debt', 'equalto', 0)|list|length }}</span>
+        <span class="stat-label">مسدد</span>
+    </div>
+    <div class="stat-mini danger">
+        <span class="stat-number">{{ patients|selectattr('total_debt', 'greaterthan', 0)|list|length }}</span>
+        <span class="stat-label">عليه دين</span>
+    </div>
+</div>
+
+<div class="patients-cards">
+    {% for patient in patients %}
+    <div class="patient-card {% if patient['total_debt'] > 0 %}has-debt{% endif %}" 
+         onclick="window.location.href='/patient/{{ patient['id'] }}'">
+        <div class="patient-card-header">
+            <div class="patient-main-info">
+                <h3>{{ patient['name'] }}</h3>
+                <div class="patient-meta">
+                    {% if patient['age'] %}
+                    <span>🎂 {{ patient['age'] }} سنة</span>
+                    {% endif %}
+                    {% if patient['gender'] %}
+                    <span>{{ '👨' if patient['gender'] == 'ذكر' else '👩' }}</span>
+                    {% endif %}
+                    {% if patient['blood_type'] %}
+                    <span class="blood-badge">🩸 {{ patient['blood_type'] }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if patient['total_debt'] > 0 %}
+            <div class="debt-badge-large">
+                <div class="debt-label">دين</div>
+                <div class="debt-value">{{ "%.2f"|format(patient['total_debt']) }}</div>
+            </div>
+            {% else %}
+            <div class="paid-badge">✅ مسدد</div>
+            {% endif %}
+        </div>
+        
+        <div class="patient-card-body">
+            {% if patient['phone'] %}
+            <div class="info-line">
+                <span class="icon">📱</span>
+                <span>{{ patient['phone'] }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="financial-mini">
+                <div class="fin-item">
+                    <span class="label">إجمالي الرسوم</span>
+                    <span class="value">{{ "%.2f"|format(patient['total_charges']) }}</span>
+                </div>
+                <div class="fin-item success-text">
+                    <span class="label">المدفوع</span>
+                    <span class="value">{{ "%.2f"|format(patient['total_paid']) }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="patient-card-footer">
+            <a href="{{ url_for('patient_details', patient_id=patient['id']) }}" 
+               class="card-btn" onclick="event.stopPropagation()">
+                <span>عرض الملف</span>
+            </a>
+            <a href="{{ url_for('new_visit', patient_id=patient['id']) }}" 
+               class="card-btn primary" onclick="event.stopPropagation()">
+                <span>زيارة جديدة</span>
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="no-patients">
+        <div class="empty-state">
+            <div class="empty-icon">👥</div>
+            <h3>لا يوجد مرضى مسجلين</h3>
+            <p>ابدأ بإضافة مريض جديد</p>
+            <a href="{{ url_for('new_patient') }}" class="btn btn-primary">➕ إضافة مريض جديد</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/voice.js') }}"></script>
+<script>
+// Quick search in patients list
+document.getElementById('quickSearch').addEventListener('input', function(e) {
+    const query = e.target.value.toLowerCase();
+    const cards = document.querySelectorAll('.patient-card');
+    
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        if (text.includes(query)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

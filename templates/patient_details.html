@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}{{ patient['name'] }} - تفاصيل المريض{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>👤 {{ patient['name'] }}</h2>
+    <div class="action-buttons">
+        <a href="{{ url_for('new_visit', patient_id=patient['id']) }}" class="btn btn-primary">
+            ➕ زيارة جديدة
+        </a>
+        <a href="{{ url_for('new_appointment', patient_id=patient['id']) }}" class="btn btn-success">
+            📅 موعد جديد
+        </a>
+        <a href="{{ url_for('export_patient', patient_id=patient['id']) }}" class="btn btn-secondary" target="_blank">
+            📄 تصدير الملف
+        </a>
+        <button onclick="deletePatient({{ patient['id'] }}, '{{ patient['name'] }}')" class="btn btn-danger">
+            🗑️ حذف المريض
+        </button>
+    </div>
+</div>
+
+<div class="patient-info-card">
+    <h3>المعلومات الشخصية</h3>
+    <div class="info-grid">
+        <div class="info-item">
+            <strong>العمر:</strong> {{ patient['age'] or 'لا يوجد' }}
+        </div>
+        <div class="info-item">
+            <strong>الجنس:</strong> {{ patient['gender'] or 'لا يوجد' }}
+        </div>
+        <div class="info-item">
+            <strong>الهاتف:</strong> {{ patient['phone'] or 'لا يوجد' }}
+        </div>
+        <div class="info-item">
+            <strong>البريد:</strong> {{ patient['email'] or 'لا يوجد' }}
+        </div>
+        <div class="info-item">
+            <strong>رقم الهوية:</strong> {{ patient['national_id'] or 'لا يوجد' }}
+        </div>
+        <div class="info-item">
+            <strong>العنوان:</strong> {{ patient['address'] or 'لا يوجد' }}
+        </div>
+    </div>
+</div>
+
+<div class="patient-info-card medical-info">
+    <h3>🩺 المعلومات الطبية</h3>
+    <div class="info-grid">
+        <div class="info-item">
+            <strong>فصيلة الدم:</strong> 
+            <span class="blood-type">{{ patient['blood_type'] or 'لا يوجد' }}</span>
+        </div>
+        <div class="info-item">
+            <strong>الحساسية:</strong> {{ patient['allergies'] or 'لا يوجد' }}
+        </div>
+        <div class="info-item full-width">
+            <strong>الأمراض المزمنة:</strong> {{ patient['chronic_diseases'] or 'لا يوجد' }}
+        </div>
+        <div class="info-item full-width">
+            <strong>الأدوية الحالية:</strong> {{ patient['current_medications'] or 'لا يوجد' }}
+        </div>
+    </div>
+</div>
+
+<div class="patient-info-card">
+    <h3>🚨 معلومات الطوارئ</h3>
+    <div class="info-grid">
+        <div class="info-item">
+            <strong>جهة الاتصال:</strong> {{ patient['emergency_contact'] or 'لا يوجد' }}
+        </div>
+        <div class="info-item">
+            <strong>رقم الطوارئ:</strong> {{ patient['emergency_phone'] or 'لا يوجد' }}
+        </div>
+    </div>
+</div>
+
+<div class="patient-info-card">
+    <h3>💳 معلومات التأمين</h3>
+    <div class="info-grid">
+        <div class="info-item">
+            <strong>شركة التأمين:</strong> {{ patient['insurance_company'] or 'لا يوجد' }}
+        </div>
+        <div class="info-item">
+            <strong>رقم البوليصة:</strong> {{ patient['insurance_number'] or 'لا يوجد' }}
+        </div>
+    </div>
+</div>
+
+{% if patient['notes'] %}
+<div class="patient-info-card">
+    <h3>📝 ملاحظات</h3>
+    <p>{{ patient['notes'] }}</p>
+</div>
+{% endif %}
+
+<div class="financial-summary">
+    <h3>الملخص المالي</h3>
+    <div class="summary-cards">
+        <div class="summary-card">
+            <div class="summary-label">إجمالي الرسوم</div>
+            <div class="summary-value">{{ "%.2f"|format(summary['total_charges']) }}</div>
+        </div>
+        <div class="summary-card success">
+            <div class="summary-label">المدفوع</div>
+            <div class="summary-value">{{ "%.2f"|format(summary['total_paid']) }}</div>
+        </div>
+        <div class="summary-card {% if summary['total_debt'] > 0 %}danger{% endif %}">
+            <div class="summary-label">الدين المتبقي</div>
+            <div class="summary-value">{{ "%.2f"|format(summary['total_debt']) }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="visits-section">
+    <h3>🏥 سجل الزيارات الطبية</h3>
+    {% if visits %}
+    <div class="visits-list">
+        {% for visit in visits %}
+        <div class="visit-card">
+            <div class="visit-header">
+                <span class="visit-date">📅 {{ visit['visit_date'][:16] }}</span>
+                {% if visit['remaining_debt'] > 0 %}
+                <span class="badge badge-danger">دين: {{ "%.2f"|format(visit['remaining_debt']) }}</span>
+                {% else %}
+                <span class="badge badge-success">مسدد</span>
+                {% endif %}
+            </div>
+            
+            <div class="visit-body">
+                {% if visit['symptoms'] %}
+                <div class="visit-info">
+                    <strong>🤒 الأعراض:</strong>
+                    <p>{{ visit['symptoms'] }}</p>
+                </div>
+                {% endif %}
+                
+                {% if visit['vital_signs'] %}
+                <div class="visit-info">
+                    <strong>📊 العلامات الحيوية:</strong>
+                    <p>{{ visit['vital_signs'] }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="visit-info">
+                    <strong>🔍 التشخيص:</strong>
+                    <p>{{ visit['diagnosis'] or 'لا يوجد' }}</p>
+                </div>
+                
+                <div class="visit-info">
+                    <strong>💊 العلاج:</strong>
+                    <p>{{ visit['treatment'] or 'لا يوجد' }}</p>
+                </div>
+                
+                {% if visit['prescriptions'] %}
+                <div class="visit-info prescription-box">
+                    <strong>📋 الوصفة الطبية:</strong>
+                    <pre>{{ visit['prescriptions'] }}</pre>
+                </div>
+                {% endif %}
+                
+                {% if visit['lab_tests'] %}
+                <div class="visit-info">
+                    <strong>🧪 الفحوصات المطلوبة:</strong>
+                    <p>{{ visit['lab_tests'] }}</p>
+                </div>
+                {% endif %}
+                
+                {% if visit['next_visit_date'] %}
+                <div class="visit-info">
+                    <strong>📅 موعد المراجعة القادم:</strong>
+                    <p>{{ visit['next_visit_date'] }}</p>
+                </div>
+                {% endif %}
+                
+                {% if visit['notes'] %}
+                <div class="visit-info">
+                    <strong>📝 ملاحظات:</strong>
+                    <p>{{ visit['notes'] }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="visit-financial">
+                    <div class="financial-item">
+                        <span>التكلفة:</span>
+                        <strong>{{ "%.2f"|format(visit['total_cost']) }}</strong>
+                    </div>
+                    <div class="financial-item">
+                        <span>المدفوع:</span>
+                        <strong>{{ "%.2f"|format(visit['paid_amount']) }}</strong>
+                    </div>
+                    <div class="financial-item {% if visit['remaining_debt'] > 0 %}debt-text{% endif %}">
+                        <span>المتبقي:</span>
+                        <strong>{{ "%.2f"|format(visit['remaining_debt']) }}</strong>
+                    </div>
+                </div>
+                
+                {% if visit['remaining_debt'] > 0 %}
+                <button class="btn btn-small btn-success" 
+                        onclick="showPaymentModal({{ visit['id'] }}, {{ visit['remaining_debt'] }})">
+                    💰 إضافة دفعة
+                </button>
+                {% endif %}
+                <a href="{{ url_for('export_visit', visit_id=visit['id']) }}" 
+                   class="btn btn-small" target="_blank">
+                    📄 تصدير
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="no-data">لا توجد زيارات مسجلة لهذا المريض</p>
+    {% endif %}
+</div>
+
+<!-- Payment Modal -->
+<div id="paymentModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closePaymentModal()">&times;</span>
+        <h3>إضافة دفعة</h3>
+        <form id="paymentForm">
+            <input type="hidden" id="visitId">
+            
+            <div class="form-group">
+                <label>المبلغ المتبقي:</label>
+                <div id="remainingAmount" class="debt-amount"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="paymentAmount">المبلغ المدفوع *</label>
+                <div class="input-with-voice">
+                    <input type="number" id="paymentAmount" step="0.01" required>
+                    <button type="button" class="voice-btn" data-target="paymentAmount">🎤</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="paymentMethod">طريقة الدفع</label>
+                <select id="paymentMethod">
+                    <option value="نقدي">نقدي</option>
+                    <option value="بطاقة">بطاقة</option>
+                    <option value="تحويل">تحويل بنكي</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="paymentNotes">ملاحظات</label>
+                <div class="input-with-voice">
+                    <textarea id="paymentNotes" rows="2"></textarea>
+                    <button type="button" class="voice-btn" data-target="paymentNotes">🎤</button>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">حفظ الدفعة</button>
+                <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">
+                    إلغاء
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/voice.js') }}"></script>
+<script>
+function showPaymentModal(visitId, remainingAmount) {
+    document.getElementById('visitId').value = visitId;
+    document.getElementById('remainingAmount').textContent = remainingAmount.toFixed(2);
+    document.getElementById('paymentModal').style.display = 'block';
+}
+
+function closePaymentModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+    document.getElementById('paymentForm').reset();
+}
+
+document.getElementById('paymentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const visitId = document.getElementById('visitId').value;
+    const formData = {
+        amount: document.getElementById('paymentAmount').value,
+        payment_method: document.getElementById('paymentMethod').value,
+        notes: document.getElementById('paymentNotes').value
+    };
+    
+    try {
+        const response = await fetch('/payment/add/' + visitId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('تم إضافة الدفعة بنجاح!');
+            location.reload();
+        }
+    } catch (error) {
+        alert('حدث خطأ أثناء إضافة الدفعة');
+        console.error(error);
+    }
+});
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('paymentModal');
+    if (event.target == modal) {
+        closePaymentModal();
+    }
+}
+
+// Delete patient function
+async function deletePatient(patientId, patientName) {
+    const confirmMessage = `⚠️ تحذير خطير!\n\nهل أنت متأكد من حذف المريض "${patientName}"؟\n\nسيتم حذف:\n• جميع الزيارات الطبية\n• جميع المواعيد\n• جميع المدفوعات\n• جميع البيانات المرتبطة\n\nهذا الإجراء لا يمكن التراجع عنه!`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    // تأكيد مرة ثانية
+    if (!confirm(`هل أنت متأكد 100%؟ سيتم حذف "${patientName}" نهائياً!`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/patient/${patientId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ تم حذف المريض بنجاح');
+            window.location.href = '/patients';
+        } else {
+            alert('❌ حدث خطأ: ' + (result.error || 'خطأ غير معروف'));
+        }
+    } catch (error) {
+        alert('❌ حدث خطأ أثناء حذف المريض');
+        console.error(error);
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="الملفات الطبية">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
+    <title>{% block title %}نظام الملفات الطبية{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/enhanced-style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1>🏥 نظام الملفات الطبية</h1>
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('index') }}">الرئيسية</a></li>
+                <li><a href="{{ url_for('patients_list') }}">المرضى</a></li>
+                <li><a href="{{ url_for('new_patient') }}">مريض جديد</a></li>
+                <li><a href="{{ url_for('doctors_list') }}">الأطباء</a></li>
+                <li><a href="{{ url_for('appointments_list') }}">المواعيد</a></li>
+                <li><a href="{{ url_for('reports') }}">التقارير</a></li>
+                <li><a href="{{ url_for('clinic_settings') }}">⚙️ الإعدادات</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+    
+    <!-- PWA Support -->
+    <script>
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/static/sw.js')
+            .then(reg => console.log('Service Worker registered'))
+            .catch(err => console.log('Service Worker registration failed'));
+    }
+    
+    // Install Prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Show install button
+        const installBtn = document.createElement('button');
+        installBtn.innerHTML = '📱 ثبت التطبيق';
+        installBtn.className = 'btn btn-success';
+        installBtn.style.cssText = 'position: fixed; bottom: 20px; left: 20px; z-index: 9999; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+        
+        installBtn.onclick = async () => {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                installBtn.remove();
+            }
+            deferredPrompt = null;
+        };
+        
+        document.body.appendChild(installBtn);
+        
+        // Auto-hide after 10 seconds
+        setTimeout(() => {
+            if (installBtn.parentElement) {
+                installBtn.style.animation = 'fadeOut 0.5s ease';
+                setTimeout(() => installBtn.remove(), 500);
+            }
+        }, 10000);
+    });
+    
+    // Installed successfully
+    window.addEventListener('appinstalled', () => {
+        console.log('PWA installed successfully!');
+    });
+    </script>
+    
+    <style>
+    @keyframes fadeOut {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.8); }
+    }
+    </style>
+</body>
+</html>

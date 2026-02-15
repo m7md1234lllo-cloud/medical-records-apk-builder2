@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}الأطباء{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>👨‍⚕️ الأطباء</h2>
+    <a href="{{ url_for('new_doctor') }}" class="btn btn-primary">➕ إضافة طبيب</a>
+</div>
+
+<div class="doctors-grid">
+    {% if doctors %}
+        {% for doctor in doctors %}
+        <div class="doctor-card">
+            <div class="doctor-header">
+                <div class="doctor-icon">👨‍⚕️</div>
+                <div class="doctor-info">
+                    <h3>{{ doctor['name'] }}</h3>
+                    {% if doctor['specialization'] %}
+                    <p class="specialization">{{ doctor['specialization'] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="doctor-body">
+                {% if doctor['phone'] %}
+                <div class="info-line">
+                    <span class="icon">📱</span>
+                    <span>{{ doctor['phone'] }}</span>
+                </div>
+                {% endif %}
+                
+                {% if doctor['email'] %}
+                <div class="info-line">
+                    <span class="icon">📧</span>
+                    <span>{{ doctor['email'] }}</span>
+                </div>
+                {% endif %}
+                
+                {% if doctor['license_number'] %}
+                <div class="info-line">
+                    <span class="icon">🆔</span>
+                    <span>رخصة: {{ doctor['license_number'] }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="doctor-actions">
+                <button class="btn btn-small btn-danger" onclick="deleteDoctor({{ doctor['id'] }}, '{{ doctor['name'] }}')">
+                    🗑️ حذف
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">👨‍⚕️</div>
+        <h3>لا يوجد أطباء مسجلين</h3>
+        <p>أضف طبيب جديد للنظام</p>
+        <a href="{{ url_for('new_doctor') }}" class="btn btn-primary">➕ إضافة طبيب</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.doctors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.doctor-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.doctor-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+}
+
+.doctor-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.doctor-icon {
+    font-size: 3.5rem;
+    background: rgba(255,255,255,0.2);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.doctor-info h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.specialization {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.doctor-body {
+    padding: 1.5rem;
+}
+
+.doctor-actions {
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: flex-end;
+}
+</style>
+
+<script>
+async function deleteDoctor(doctorId, doctorName) {
+    if (!confirm(`هل أنت متأكد من حذف الطبيب "${doctorName}"؟`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/doctor/delete/${doctorId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ تم حذف الطبيب بنجاح');
+            location.reload();
+        }
+    } catch (error) {
+        alert('❌ حدث خطأ أثناء حذف الطبيب');
+        console.error(error);
+    }
+}
+</script>
+{% endblock %}
